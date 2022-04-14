@@ -41,10 +41,13 @@
 <!--</div>-->
 <div>
     {% if camera_on %}
-        <a href="/start_camera">Start Camera</a>
-    {% else %}
         <a href="/stop_camera">Stop Camera</a>
+    {% else %}
+        <a href="/start_camera">Start Camera</a>
     {% endif %}
+</div>
+<div>
+    <a href="/start_recording">Start Recording</a>
 </div>
 <div>
     <a href="/view_live">View Current Video Feed</a>

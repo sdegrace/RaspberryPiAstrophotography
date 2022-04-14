@@ -41,8 +41,8 @@ class Flag(object):
 class Camera:
     cam_thread = None  # background thread that reads frames from camera
     write_threads = []  # background thread that reads frames from camera
-    frames = queue.Queue(psutil.virtual_memory().available / 1024**2 / 14)
-    print('Queue size: ', psutil.virtual_memory().available / 1024**2 / 14)
+    frames = queue.Queue(20)
+    print('Queue size: ', psutil.virtual_memory().available / 1024**2 / 14 - 10)
     cur_frame = None  # current frame is stored here by background thread
     last_access = 0  # time of last client access to the camera
     frame_counter = Counter()
@@ -51,11 +51,14 @@ class Camera:
 
 
     def __init__(self, frame_exposure_time=10000, total_exposure_time=10, n_jobs=6):
+        self.cam_active.off()
+        self.recording.off()
         self.analogue_gain = 10000
         self.frame_exposure_time = frame_exposure_time
         self.total_exposure_time = total_exposure_time
         print('Starting Camera')
         self._camera = Picamera2()
+        self._camera.start_preview()
         print('Camera Started')
         self.config = self._camera.still_configuration()
         self._camera.configure(self.config)
@@ -63,18 +66,14 @@ class Camera:
         self.num_write_threads = n_jobs
 
     def start(self):
-        manager_thread = threading.Thread(target=self._start)
-        manager_thread.start()
-
-
-    def _start(self):
+        print('Camera Starting up...')
         self._camera.start({"ExposureTime": self.frame_exposure_time,
                             "AnalogueGain": self.analogue_gain,
                             "AwbEnable": 0,
                             "AeEnable": 0
                             })
-        self._camera.start_preview()
-        self.recording.on()
+
+        print('Camera started')
         if Camera.cam_thread is None:
             # start background frame thread
             Camera.cam_thread = threading.Thread(target=self._cam_thread, args=(self,))
@@ -84,9 +83,8 @@ class Camera:
             t = threading.Thread(target=self._write_thread, args=(self,))
             t.start()
             Camera.write_threads.append(t)
+        print('Camera threads started...')
 
-        time.sleep(self.frame_exposure_time)
-        self.recording.off()
 
     def stop(self):
         self.recording.off()
@@ -97,9 +95,22 @@ class Camera:
             Camera.last_access = time.time()
             return self.frame
 
+    def start_recording(self):
+        manager_thread = threading.Thread(target=self._start_recording())
+        manager_thread.start()
+
+    def _start_recording(self):
+        print('recording thread started. Recording time: ', self.total_exposure_time)
+        self.recording.on()
+        print('recording started')
+        time.sleep(self.total_exposure_time)
+        print('time complete')
+        self.recording.off()
+        print('recording complete')
+
     @classmethod
     def _cam_thread(cls, self):
-        print('cam thread started')
+        print('cam thread started. Recording: ', cls.recording.value())
         start = time.time()
         while cls.cam_active:
             request = self._camera.capture_request()
@@ -118,11 +129,9 @@ class Camera:
         while not cls.frames.empty() or cls.cam_thread is not None:
             if cls.frames.full():
                 continue
-            print('frame num ', cls.frame_counter.value(), ' started')
             image = cls.frames.get()
-            print('gotten image')
             image.convert('RGB').save(f"fnoa{cls.frame_counter.value()}.jpg", quality=100, subsampling=0)
             print("frame num", cls.frame_counter.value(), "written")
-            print('frame ', cls.frame_counter.value(), ' took ', time.time() - last)
             cls.frame_counter.increment()
             last = time.time()
+        print('Write thread done')

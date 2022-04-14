@@ -19,7 +19,6 @@ focal_length = 800
 aperture = 60
 pixel_size = 1.14
 total_exposure_length = 30
-frame_exposure_length = .1
 des_trail_len = 7
 
 camera = None
@@ -51,6 +50,7 @@ def exposure_len_given_desired_trail_len(trail_pixels, F, D):
 def angular_resolution_per_pixel(pixel_size, focal_length):
     return (pixel_size / focal_length) * 206.265
 
+frame_exposure_length = int(exposure_len_given_desired_trail_len(des_trail_len, focal_length, 0) * 1000000)
 
 # def start_streaming():
 #     client_socket.connect((ip, port))
@@ -140,6 +140,9 @@ def camera_settings():
 
     frame_exposure_length = int(float(request.form['frame_exposure_length']) * 1000000)
     total_exposure_length = int(float(request.form['total_exposure_length']))
+    if camera is not None:
+        camera.total_exposure_time= total_exposure_length
+        camera.frame_exposure_time = frame_exposure_length
     focal_length = int(request.form['focal_length'])
     aperture = int(request.form['aperture'])
     des_trail_len = int(request.form['trail_len'])
@@ -167,7 +170,7 @@ def start_cam():
     """Video streaming route. Put this in the src attribute of an img tag."""
     global camera
     if camera is None:
-        camera = Camera.Camera()
+        camera = Camera.Camera(frame_exposure_time=frame_exposure_length, total_exposure_time=total_exposure_length)
     camera.start()
     return redirect('/', code=302)
 
@@ -178,6 +181,13 @@ def stop_cam():
     global camera
     if camera is not None:
         camera.stop()
+    return redirect('/', code=302)
+
+@app.route('/start_recording')
+def start_recording():
+    global camera
+    if not camera.recording.value():
+        camera.start_recording()
     return redirect('/', code=302)
 
 
