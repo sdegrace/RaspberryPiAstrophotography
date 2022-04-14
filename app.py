@@ -173,7 +173,7 @@ def start_cam():
 
 
 @app.route('/stop_camera')
-def start_cam():
+def stop_cam():
     """Video streaming route. Put this in the src attribute of an img tag."""
     global camera
     if camera is not None:
