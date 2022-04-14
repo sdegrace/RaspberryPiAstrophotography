@@ -1,0 +1,51 @@
+<form action="/settingsSubmit" method="POST">
+    <div>
+        <label for="focal_length">Focal Length</label>
+        <input name="focal_length" id="focal_length" value={{ focal_length }}>
+    </div>
+    <div>
+        <label for="aperture">Aperture</label>
+        <input name="aperture" id="aperture" value={{ aperture }}>
+    </div>
+    <div>
+        <label for="frame_exposure_length">Exposure Length per Frame</label>
+        <input name="frame_exposure_length" id="frame_exposure_length" value={{ frame_exposure_length / 1000000 }}>
+    </div>
+    <div>
+        <label for="total_exposure_length">Total Exposure Length</label>
+        <input name="total_exposure_length" id="total_exposure_length" value={{ total_exposure_length }}>
+    </div>
+    <div>
+        <label for="trail_len">Desired Star Trail Length</label>
+        <input name="trail_len" id="trail_len" value={{ trail_len }}>
+        <label>Exposure Length Given Trail Length</label>
+        <label>{{ calc_exp_min }}</label>
+        <label>{{ calc_exp_max }}</label>
+    </div>
+    <div>
+        <button>Update Settings</button>
+    </div>
+</form>
+<div>
+    <label>Angular Resolution per Pixel</label>
+    <label>{{arpp}}"</label>
+</div>
+<div>
+    <label>Telescope Maximum Resolving Power</label>
+    <label>{{mrp}}"</label>
+    <label>{{mrp/arpp}} pixels per resolving power</label>
+</div>
+<!--<div>-->
+<!--    <label>Star Trail Length</label>-->
+<!--    <label>{{stl}}</label>-->
+<!--</div>-->
+<div>
+    {% if camera_on %}
+        <a href="/start_camera">Start Camera</a>
+    {% else %}
+        <a href="/stop_camera">Stop Camera</a>
+    {% endif %}
+</div>
+<div>
+    <a href="/view_live">View Current Video Feed</a>
+</div>
